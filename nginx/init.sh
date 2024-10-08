@@ -63,7 +63,7 @@ if [ "$ENVIRONMENT" == "production" ]; then
 
     # Start nginx temporarily to serve the ACME challenge
     echo "Starting NGINX temporarily for ACME challenge..."
-    nginx -g "daemon off;" &
+    nginx &
 
     # Check if the certificate already exists before issuing a new one
     if [ ! -f "$CERTS/private/key.pem" ] || [ ! -f "$CERTS/cert.pem" ]; then
@@ -73,23 +73,15 @@ if [ "$ENVIRONMENT" == "production" ]; then
         echo "Certificate already exists, skipping issuance."
     fi
 
-    # Stop the temporary nginx instance after the ACME challenge is done
-    echo "Stopping temporary NGINX..."
-    nginx -s stop
-
-    # Copy the production config with SSL
     copy_nginx_conf "$MYCONFIGS/prod.conf"
 
-    # Install the SSL certificate and set up NGINX to reload when it updates
+    echo "Reloading NGINX with SSL..."
     ~/.acme.sh/acme.sh --install-cert -d "$DOMAIN" \
         --key-file "$CERTS/private/key.pem" \
         --fullchain-file "$CERTS/cert.pem" \
         --reloadcmd "nginx -s reload"
 
-    # Finally, start NGINX with SSL enabled
-    echo "Starting NGINX with SSL..."
-    nginx -g "daemon off;"
-
+    echo "success!"
 else
     # Development mode
     if [ -z "$DOMAIN" ]; then
@@ -111,5 +103,5 @@ else
 
     # Start NGINX in development mode
     echo "Starting NGINX in development mode..."
-    nginx -g "daemon off;"
+    nginx
 fi
