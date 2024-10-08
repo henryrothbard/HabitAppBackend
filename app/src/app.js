@@ -11,7 +11,7 @@ app.use(logger(
 
 app.use(sessionMiddleware());
 
-app.get('/', (req, res) => res.send('hello'));
+app.get('/api/', (req, res) => res.send('hello'));
 
 app.use((req, res, next) => {
     res.status(404).send();
