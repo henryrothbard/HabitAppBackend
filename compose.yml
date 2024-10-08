@@ -1,0 +1,59 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+      args:
+        - ENVIRONMENT=${ENVIRONMENT}
+        - DOMAIN=${DOMAIN:-localhost}
+        - EMAIL=${EMAIL}
+    container_name: HabitAppBackend-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks: 
+      - proxy
+
+  app:
+    build:
+      context: ./app
+      args:
+        - PORT=${PORT}
+    container_name: HabitAppBackend-app
+    expose:
+      - ${PORT}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - internal
+      - proxy
+  
+  postgres:
+    image: postgres:alpine
+    container_name: HabitAppBackend-postgres
+    environment:
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+  
+  redis:
+    image: redis:alpine
+    container_name: HabitAppBackend-redis
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+  proxy:
