@@ -6,6 +6,8 @@ ENVIRONMENT=$1
 DOMAIN=$2
 EMAIL=$3
 
+echo "Starting nginx in: ${ENVIRONMENT}"
+
 MYCONFIGS=/usr/local/etc/nginx
 CONFIG=/etc/nginx/conf.d
 CERTS=/etc/nginx/ssl
