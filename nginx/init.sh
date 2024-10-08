@@ -63,7 +63,7 @@ if [ "$ENVIRONMENT" == "production" ]; then
 
     # Start nginx temporarily to serve the ACME challenge
     echo "Starting NGINX temporarily for ACME challenge..."
-    nginx &
+    nginx
 
     # Check if the certificate already exists before issuing a new one
     if [ ! -f "$CERTS/private/key.pem" ] || [ ! -f "$CERTS/cert.pem" ]; then
@@ -82,6 +82,8 @@ if [ "$ENVIRONMENT" == "production" ]; then
         --reloadcmd "nginx -s reload"
 
     echo "success!"
+
+    tail -f /var/log/nginx/error.log
 else
     # Development mode
     if [ -z "$DOMAIN" ]; then
@@ -103,5 +105,6 @@ else
 
     # Start NGINX in development mode
     echo "Starting NGINX in development mode..."
-    nginx
+    nginx 
+    tail -f /var/log/nginx/error.log
 fi
