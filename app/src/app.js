@@ -1,6 +1,7 @@
 import express from 'express';
 import logger, { logToFile, logToConsole, defaultFormat } from './middleware/logger.js';
 import sessionMiddleware from './middleware/session.js';
+import API from './routes/api.js';
 
 const app = express();
 
@@ -11,7 +12,7 @@ app.use(logger(
 
 app.use(sessionMiddleware());
 
-app.get('/api/', (req, res) => res.send('hello'));
+app.use('/api', API);
 
 app.use((req, res, next) => {
     res.status(404).send();
