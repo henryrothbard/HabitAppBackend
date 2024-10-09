@@ -1,15 +1,14 @@
-import redis from 'redis';
+import { createClient } from "redis";
 
-const client = redis.createClient({
-    url: `redis${process.env.REDIS_SECURE === 'true' ? 's' : ''}://
-        ${process.env.REDIS_USER}:${process.env.REDIS_SECRET}@
-        ${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+const redisClient = createClient({
+    url: `redis${process.env.REDIS_SECURE === 'true' ? 's' : ''}://` + 
+        `${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`,
 });
 
-client.on('connect', () => console.log('Connected to Redis'));
-client.on('ready', () => console.log('Redis is ready'));
-client.on('error', err => console.error('Redis Client Error', err));
+redisClient.on('connect', () => console.log('Connected to Redis'));
+redisClient.on('ready', () => console.log('Redis is ready'));
+redisClient.on('error', err => console.error('Redis Client Error: ', err));
 
-client.connect();
+redisClient.connect();
 
-export default client;
+export default redisClient;
