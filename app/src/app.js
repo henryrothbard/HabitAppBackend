@@ -10,6 +10,8 @@ app.use(logger(
     logToFile(defaultFormat, './logs/http.log', { writeSeconds: 60, numLogs: 5 }),
 ));
 
+app.use(express.json());
+
 app.use(sessionMiddleware());
 
 app.use('/api', API);

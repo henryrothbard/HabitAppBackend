@@ -10,6 +10,7 @@ services:
       - ENVIRONMENT=${ENVIRONMENT}
       - DOMAIN=${DOMAIN:-localhost}
       - EMAIL=${EMAIL}
+      - PORT=${PORT}
     restart: unless-stopped
     networks: 
       - proxy
@@ -39,6 +40,7 @@ services:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASS}
     volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
     networks:
       - internal
@@ -46,6 +48,7 @@ services:
   redis:
     image: redis:alpine
     container_name: HabitAppBackend-redis
+    command: redis-server --port ${REDIS_PORT} --requirepass ${REDIS_SECRET}
     networks:
       - internal
 
