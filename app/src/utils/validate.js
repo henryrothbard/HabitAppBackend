@@ -10,5 +10,9 @@ export const validateUsername = (() => {
 })();
 
 export const validateDisplayName = (() => {
-    return (username) => username.length <= 127;
+    return (displayName) => displayName.length <= 64;
+})();
+
+export const validateGroupName = (() => {
+    return (groupName) => groupName.length <= 64;
 })();
