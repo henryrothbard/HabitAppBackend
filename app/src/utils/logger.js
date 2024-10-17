@@ -3,6 +3,11 @@ import path from 'path';
 import gzip from '../utils/gzip.js'
 
 const streamsCleanup = [];
+
+const addCleanup = (cleanup) => {
+    streamsCleanup.push(cleanup);
+}
+
 const cleanupLogs = () => {
     streamsCleanup.map((cleanup, i) => {
         try {
@@ -13,26 +18,14 @@ const cleanupLogs = () => {
     });
 };
 
-const logger = (...streams) => (req, res, next) => {
+const Logger = (...streams) => {
     if (!streams) throw new TypeError('Streams must exist for logger');
 
-    const start = process.hrtime();
-    const timestamp = new Date();
-
-    const log = (err) => {
-        const [seconds, nanoseconds] = process.hrtime(start);
-        const elapsedTime = (seconds * 1000) + (nanoseconds / 1e6);
-
+    const log = (log, level='') => {
         const logEntry = {
-            timestamp,
-            url: req.url,
-            method: req.method,
-            status: res.statusCode,
-            time: elapsedTime,
-            err: req.err || null,
-            len: res.getHeader('Content-Length') || 0,
-            req,
-            res,
+            timestamp: new Date(),
+            log: log,
+            level: level,
         };
 
         streams.map((s, i) => {
@@ -42,15 +35,17 @@ const logger = (...streams) => (req, res, next) => {
                 console.warn('Error writing log to stream ', i, ': ', error);
             }
         });
+    };
+
+    return {
+        error: (x) => log(x, 'ERROR'),
+        warn: (x) => log(x, 'WARN'),
+        log,
     }
-
-    res.on('finish', log);
-
-    next();
-};
+}
 
 const defaultFormat = (log) => {
-    return `${log.err ? '[ERROR] ' : ''}[${log.timestamp.toISOString()}] ${log.status} ${log.method} '${log.url}' ${log.time}ms ${log.err || ''}`;
+    return `${log.level ? `[${log.level}] ` : ''}[${log.timestamp}] ${log.log}`;
 }
 
 const logToFile = (formatter, _logPath, {separator='\n', writeSeconds=60, maxSizeMB=10, numLogs=10}) => {
@@ -78,7 +73,7 @@ const logToFile = (formatter, _logPath, {separator='\n', writeSeconds=60, maxSiz
     };
 
     rotateLog();
-    streamsCleanup.push(() => fs.appendFileSync(logPath, buffer));
+    addCleanup(() => fs.appendFileSync(logPath, buffer));
 
     return (log) => {
         if (buffer.length === 0) setTimeout(writeBuffer, writeSeconds * 1000)
@@ -94,5 +89,11 @@ const logToConsole = (formatter) => {
     };
 };
 
-export default logger;
-export { logToFile, logToConsole, defaultFormat, cleanupLogs }
+export default Logger;
+export { 
+    logToFile, 
+    logToConsole,
+    cleanupLogs, 
+    defaultFormat,
+    addCleanup,
+};

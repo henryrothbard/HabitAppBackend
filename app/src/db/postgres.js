@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 
-const sql = postgres({
+const pgsql = postgres({
     host: process.env.PG_HOST,
     port: process.env.PG_PORT,
     database: process.env.PG_DATABASE,
@@ -8,4 +8,4 @@ const sql = postgres({
     password: process.env.PG_PASS,
 });
 
-export default sql;
+export default pgsql;

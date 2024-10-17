@@ -14,9 +14,8 @@ CERTS=/etc/nginx/ssl
 WEBROOT=/var/www/html
 
 mkdir -p "$CERTS/private"
-apk add --no-cache openssl
+apk add --no-cache openssl gettext
 
-# Function to copy the nginx configuration
 copy_nginx_conf() {
     if [ -f "$1" ]; then
         cp "$1" "$CONFIG/nginx.conf"
@@ -28,7 +27,6 @@ copy_nginx_conf() {
     fi
 }
 
-# Function to set up a temporary HTTP config for the ACME challenge
 copy_temp_http_conf() {
     echo "Setting up temporary NGINX configuration for ACME challenge..."
     cat > "$CONFIG/nginx.conf" <<EOF
@@ -48,7 +46,6 @@ server {
 EOF
 }
 
-# Check if we're in production mode
 if [ "$ENVIRONMENT" == "production" ]; then 
     apk add --no-cache socat curl
 
@@ -58,14 +55,11 @@ if [ "$ENVIRONMENT" == "production" ]; then
 
     mkdir -p "$WEBROOT"
 
-    # Set up temporary config for ACME challenge
     copy_temp_http_conf
 
-    # Start nginx temporarily to serve the ACME challenge
     echo "Starting NGINX temporarily for ACME challenge..."
     nginx
 
-    # Check if the certificate already exists before issuing a new one
     if [ ! -f "$CERTS/private/key.pem" ] || [ ! -f "$CERTS/cert.pem" ]; then
         echo "Issuing new certificate using acme.sh..."
         ~/.acme.sh/acme.sh --issue -d "$DOMAIN" -w "$WEBROOT"
@@ -74,6 +68,9 @@ if [ "$ENVIRONMENT" == "production" ]; then
     fi
 
     copy_nginx_conf "$MYCONFIGS/prod.conf"
+
+    envsubst '$PORT $DOMAIN' < $CONFIG/nginx.conf > $CONFIG/nginx.conf.tmp
+    mv $CONFIG/nginx.conf.tmp $CONFIG/nginx.conf
 
     echo "Reloading NGINX with SSL..."
     ~/.acme.sh/acme.sh --install-cert -d "$DOMAIN" \
@@ -85,16 +82,13 @@ if [ "$ENVIRONMENT" == "production" ]; then
 
     tail -f /var/log/nginx/error.log
 else
-    # Development mode
     if [ -z "$DOMAIN" ]; then
         echo "No domain provided, using 'localhost' for development..."
         DOMAIN="localhost"
     fi
 
-    # Copy the development config
     copy_nginx_conf "$MYCONFIGS/dev.conf"
 
-    # Generate a self-signed certificate for development if not already present
     if [ ! -f "$CERTS/private/key.pem" ] || [ ! -f "$CERTS/cert.pem" ]; then
         echo "Generating self-signed certificate for development..."
         openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
@@ -103,8 +97,14 @@ else
             -out "$CERTS/cert.pem"
     fi
 
-    # Start NGINX in development mode
     echo "Starting NGINX in development mode..."
+
+    
+    envsubst '$PORT $DOMAIN' < $CONFIG/nginx.conf > $CONFIG/nginx.conf.tmp
+    mv $CONFIG/nginx.conf.tmp $CONFIG/nginx.conf
+
+    echo $PORT $DOMAIN
+
     nginx 
     tail -f /var/log/nginx/error.log
 fi

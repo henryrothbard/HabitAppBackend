@@ -1,6 +1,6 @@
 import session from "express-session";
 import RedisStore from "connect-redis";
-import redisClient from "../db/redis";
+import redisClient from "../db/redis.js";
 
 const sessionMiddleware = () => session({
     store: new RedisStore({ client: redisClient }),
@@ -9,8 +9,9 @@ const sessionMiddleware = () => session({
     saveUninitialized: false,
     rolling: true,
     cookie: {
-        secure: (process.env.ENV === 'production'),
         httpOnly: true,
+        secure: true,
+        sameSite: 'Strict',
         maxAge: 3 * 60 * 60 * 1000,
     }
 });

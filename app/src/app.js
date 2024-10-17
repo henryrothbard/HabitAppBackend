@@ -1,20 +1,25 @@
 import express from 'express';
-import logger, { logToFile, logToConsole, defaultFormat } from './middleware/logger.js';
+import cookieParser from 'cookie-parser'
+import HTTPLogger, { defaultHTTPFormat, logToFile, logToConsole } from './middleware/httpLogger.js';
 import sessionMiddleware from './middleware/session.js';
-import API from './routes/api.js';
+import auth from './routes/auth.js';
 
 const app = express();
 
-app.use(logger(
-    logToConsole(defaultFormat),
-    logToFile(defaultFormat, './logs/http.log', { writeSeconds: 60, numLogs: 5 }),
+app.use(HTTPLogger(
+    logToConsole(defaultHTTPFormat),
+    logToFile(defaultHTTPFormat, './logs/http.log', { writeSeconds: 60, numLogs: 5 }),
 ));
 
 app.use(express.json());
 
+app.use(cookieParser())
+
 app.use(sessionMiddleware());
 
-app.use('/api', API);
+app.get('/test', (req, res) => res.send('Hi there!'))
+
+app.use('/auth', auth);
 
 app.use((req, res, next) => {
     res.status(404).send();

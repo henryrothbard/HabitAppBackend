@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { cleanupLogs } from './middleware/logger.js';
+import { cleanupLogs } from './utils/logger.js';
 
 import app from './app.js';
 

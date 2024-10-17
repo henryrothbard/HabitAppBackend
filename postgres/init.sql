@@ -1,21 +1,23 @@
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE,
+    email VARCHAR(254) UNIQUE NOT NULL,
     phone VARCHAR(15) UNIQUE,
-    name VARCHAR(50),
-    password VARCHAR(60) NOT NULL,
+    display_name VARCHAR(127),
+    pass_hash VARCHAR(60) NOT NULL,
+    token_hashes VARCHAR(64)[] DEFAULT '{}',
     created_at TIMESTAMP DEFAULT NOW(),
     private BOOLEAN DEFAULT TRUE NOT NULL,
     options JSONB
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 CREATE TABLE IF NOT EXISTS groups (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(127) NOT NULL,
     description TEXT,
     interval_days INT DEFAULT 1,
     created_at TIMESTAMP DEFAULT NOW(),
