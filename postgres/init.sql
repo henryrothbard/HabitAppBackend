@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(32) UNIQUE NOT NULL,
     email VARCHAR(254) UNIQUE NOT NULL,
     phone VARCHAR(15) UNIQUE,
-    display_name VARCHAR(127),
+    display_name VARCHAR(64) NOT NULL,
     pass_hash VARCHAR(60) NOT NULL,
     token_hashes VARCHAR(64)[] DEFAULT '{}',
     created_at TIMESTAMP DEFAULT NOW(),
@@ -17,7 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 CREATE TABLE IF NOT EXISTS groups (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(127) NOT NULL,
+    name VARCHAR(64) NOT NULL,
     description TEXT,
     interval_days INT DEFAULT 1,
     created_at TIMESTAMP DEFAULT NOW(),

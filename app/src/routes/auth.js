@@ -1,5 +1,5 @@
 import express from "express";
-import pgsql from "../db/postgres.js";
+import pgsql from "../db/postgres/sql.js";
 import bcrypt from 'bcrypt';
 import asyncHandler from "../utils/asyncHandler.js";
 import { validateDisplayName, validateEmail, validateUsername } from "../utils/validate.js";
@@ -21,8 +21,8 @@ const createRefreshToken = (res, id) => {
 
 router.post('/login', asyncHandler( async (req, res) => {
     const loginMethod = req.body.email ? 'email' :
-        req.body.username ? 'username' :
-        req.body.phone ? 'phone' : null;
+        req.body.username ? 'username' 
+        : null;
     
     if (!loginMethod) {
         res.status(400).send();
@@ -134,8 +134,6 @@ router.post('/signup', asyncHandler( async (req, res) => {
         res.status(401).send();
         return;
     }
-
-    
 
 }));
 
