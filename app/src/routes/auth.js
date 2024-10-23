@@ -1,16 +1,13 @@
 import express from "express";
-import pgsql from "../db/postgres/sql.js";
 import bcrypt from 'bcrypt';
 import asyncHandler from "../utils/asyncHandler.js";
-import { validateDisplayName, validateEmail, validateUsername } from "../utils/validate.js";
+import Users from "../db/postgres/users.js";
+import { validateUsername, validateDisplayName, validateEmail, validatePassword } from "../db/postgres/validateEntries.js";
 
 const router = express.Router();
 
-const createRefreshToken = (res, id) => {
-    const token = crypto.randomBytes(64).toString('hex');
-    const token_hash = crypto.createHash('sha256').update(token).digest('hex');
-    pgsql`UPDATE users SET token_hashes = (array_append(token_hashes[:4], ${token_hash})) WHERE id = ${id}`
-    res.cookie('refreshToken', `${result.id}.${token}`, {
+const createRefreshCookie = (res, id, token) => {
+    res.cookie('refreshToken', `${id}.${token}`, {
         httpOnly: true,
         secure: true,
         sameSite: 'Strict',
@@ -23,86 +20,62 @@ router.post('/login', asyncHandler( async (req, res) => {
     const loginMethod = req.body.email ? 'email' :
         req.body.username ? 'username' 
         : null;
+
+    const uid = req.body.email || req.body.username;
+    const password = req.body.password;
+    const rememberMe = req.body.remember_me || false;
     
-    if (!loginMethod) {
+    if (!loginMethod || !password) {
         res.status(400).send();
         return;
     }
 
-    const user_identifier = req.body.email || req.body.username || req.body.phone;
-    const pass = req.body.password;
+    const user = Users.findUnique(uid, loginMethod);
 
-    if (!pass) {
-        res.status(400).send();
-        return;
-    }
-
-    const rememberMe = req.body.rememberMe || false;
+    const result = await user.get('id', 'username', 'email', 'pass_hash');
     
-    const result = await pgsql`SELECT id, username, email, pass_hash FROM users WHERE ${loginMethod} = ${user_identifier}`[0];
-
-    if (!result) {
-        setTimeout(() => res.status(401).send(), Math.random() * 50 + 50);
+    if (!result || !(await bcrypt.compare(password, result.pass_hash))) {
+        res.status(401).send();
         return;
     }
 
-    const {id, username, email, pass_hash} = result;
+    const { id, username, email } = result;
 
-    if (!await bcrypt.compare(pass, pass_hash)) {
-        setTimeout(() => res.status(401).send(), Math.random() * 50 + 50);
-        return;
-    }
+    if (rememberMe) 
+        createRefreshCookie(res, id, await user.appendToken());
 
-    if (rememberMe) {
-        createRefreshToken(res, id);
-    }
+    req.session.user = { id, username, email };
 
-    req.session.user = { id, username, email }
-
-    res.status(204).json({username, email});
+    res.json({username, email});
 }));
 
 router.post('/refresh', asyncHandler( async (req, res) => {
-    const [id, token] = req.cookies['refreshToken'].split('.');
-    const token_hash = crypto.createHash('sha256').update(token).digest('hex');
-
-    const result = await pgsql`WITH array_data AS (
-            SELECT token_hashes, 
-                array_position(token_hashes, ${token_hash}) AS pos
-            FROM users
-            WHERE id = ${id}
-        )
-        SELECT
-            CASE
-                WHEN pos IS NOT NULL THEN
-                    array_cat(
-                        token_hashes[1:pos-1],
-                        token_hashes[pos+1:array_length(token_hashes, 1)]
-                    )
-                ELSE token_hashes
-            END AS new_array,
-        (pos IS NOT NULL) AS found,
-        username,
-        email
-    FROM array_data;`[0]
-
-    if (!result || !result.found) {
-        setTimeout(() => res.status(401).send(), Math.random() * 50 + 50);
+    const cookie = req.cookies['refreshToken'];
+    if (!cookie) {
+        res.status(400).send();
         return;
     }
 
-    createRefreshToken(res, id);
+    const [id, token] = cookie.split('.');
+
+    const result = await Users.findUnique(id, 'id').refreshToken(token, 'username', 'email');
+
+    if (!result || !result.verified) {
+        res.clearCookie('refreshToken');
+        res.status(401).send();
+        return;
+    }
+
+    const { username, email } = result.got;
+
+    createRefreshCookie(res, id, result.token);
 
     req.session.user = { id, username, email }
 
-    res.status(204).json({username, email});
+    res.json({username, email});
 }));
 
-const userExists = async (uid, method) => {
-    return (await pgsql`SELECT 1 FROM users WHERE ${method} = ${uid}`).length > 0;
-}
-
-router.post('/user-exists', asyncHandler( async (req, res) => {
+router.get('/user_exists', asyncHandler( async (req, res) => {
     const method = req.body.email ? 'email' :
         req.body.username ? 'username' :
         req.body.phone ? 'phone' : null;
@@ -114,27 +87,29 @@ router.post('/user-exists', asyncHandler( async (req, res) => {
 
     const uid = req.body.email || req.body.username || req.body.phone;
 
-    res.json({exists: await userExists(uid, method)});
+    res.json({exists: await Users.findUnique(uid, method).exists()});
 }));
 
 router.post('/signup', asyncHandler( async (req, res) => {
-    const { username, email, displayName, password } = req.body;
+    const { username, email, display_name, password } = req.body;
 
-    if ( !(
+    if (!(validateUsername(username) && 
         validateEmail(email) && 
-        validateUsername(username) && 
-        validateDisplayName(displayName) && 
-        password
-    )) {
+        validateDisplayName(display_name) && 
+        validatePassword(password)) 
+    ) {
         res.status(400).send();
         return;
     }
 
-    if (await userExists(username, 'username') || await userExists(email, 'email')) {
+    const pass_hash = await bcrypt.hash(password, Number(process.env.PASSWORD_SALT_ROUNDS))
+
+    if (await Users.create({username, email, display_name, pass_hash}) === null) {
         res.status(401).send();
         return;
     }
 
+    res.send();
 }));
 
 router.post('/logout', (req, res) => {

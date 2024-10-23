@@ -6,6 +6,8 @@ import auth from './routes/auth.js';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(HTTPLogger(
     logToConsole(defaultHTTPFormat),
     logToFile(defaultHTTPFormat, './logs/http.log', { writeSeconds: 60, numLogs: 5 }),

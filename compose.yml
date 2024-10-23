@@ -32,6 +32,14 @@ services:
     networks:
       - internal
       - proxy
+    develop:
+      watch:
+        - action: rebuild
+          path: ./app/src
+          target: /usr/app/src
+        - action: rebuild
+          path: ./app/package.json
+          target: /usr/app/package.json
   
   postgres:
     image: postgres:alpine
@@ -39,6 +47,7 @@ services:
     environment:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASS}
+      - POSTGRES_DB=${PG_DATABASE}
     volumes:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
