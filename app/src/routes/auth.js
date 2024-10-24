@@ -75,7 +75,7 @@ router.post('/refresh', asyncHandler( async (req, res) => {
     res.json({id, username, email, display_name});
 }));
 
-router.post('/user_exists', asyncHandler( async (req, res) => {
+router.post('/user-exists', asyncHandler( async (req, res) => {
     const method = req.body.email ? 'email' :
         req.body.username ? 'username' :
         req.body.phone ? 'phone' : null;

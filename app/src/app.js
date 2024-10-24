@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser'
 import HTTPLogger, { defaultHTTPFormat, logToFile, logToConsole } from './middleware/httpLogger.js';
 import sessionMiddleware from './middleware/session.js';
 import auth from './routes/auth.js';
+import habits from './routes/habits.js';
 
 const app = express();
 
@@ -19,9 +20,8 @@ app.use(cookieParser())
 
 app.use(sessionMiddleware());
 
-app.get('/test', (req, res) => res.send('Hi there!'))
-
 app.use('/auth', auth);
+app.use('/habits', habits);
 
 app.use((req, res, next) => {
     res.status(404).send();

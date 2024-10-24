@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS memberships (
 );
 
 CREATE INDEX IF NOT EXISTS idx_memberships_user_id ON memberships(user_id);
+CREATE INDEX IF NOT EXISTS idx_memberships_user_id ON memberships(group_id);
 
 CREATE TABLE IF NOT EXISTS occurrences (
     id SERIAL PRIMARY KEY,
