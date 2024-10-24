@@ -1,6 +1,6 @@
 import express from "express";
-import asyncHandler from "../utils/asyncHandler";
-import pgsql from "../db/postgres/postgres";
+import asyncHandler from "../utils/asyncHandler.js";
+import pgsql from "../db/postgres/postgres.js";
  
 const router = express.Router();
 
