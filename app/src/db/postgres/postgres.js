@@ -8,4 +8,6 @@ const pgsql = postgres({
     password: process.env.PG_PASS,
 });
 
+await pgsql`SELECT * FROM users LIMIT 1`;
+
 export default pgsql;

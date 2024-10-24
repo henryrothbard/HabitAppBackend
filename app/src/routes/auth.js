@@ -32,21 +32,21 @@ router.post('/login', asyncHandler( async (req, res) => {
 
     const user = Users.findUnique(uid, loginMethod);
 
-    const result = await user.get('id', 'username', 'email', 'pass_hash');
+    const result = await user.get('id', 'username', 'email', 'display_name', 'pass_hash');
     
     if (!result || !(await bcrypt.compare(password, result.pass_hash))) {
         res.status(401).send();
         return;
     }
 
-    const { id, username, email } = result;
+    const { id, username, email, display_name } = result;
 
     if (rememberMe) 
         createRefreshCookie(res, id, await user.appendToken());
 
-    req.session.user = { id, username, email };
+    req.session.user = { id };
 
-    res.json({username, email});
+    res.json({id, username, email, display_name});
 }));
 
 router.post('/refresh', asyncHandler( async (req, res) => {
@@ -58,7 +58,7 @@ router.post('/refresh', asyncHandler( async (req, res) => {
 
     const [id, token] = cookie.split('.');
 
-    const result = await Users.findUnique(id, 'id').refreshToken(token, 'username', 'email');
+    const result = await Users.findUnique(id, 'id').refreshToken(token, 'username', 'email', 'display_name');
 
     if (!result || !result.verified) {
         res.clearCookie('refreshToken');
@@ -66,16 +66,16 @@ router.post('/refresh', asyncHandler( async (req, res) => {
         return;
     }
 
-    const { username, email } = result.got;
+    const { username, email, display_name } = result.got;
 
     createRefreshCookie(res, id, result.token);
 
-    req.session.user = { id, username, email }
+    req.session.user = { id }
 
-    res.json({username, email});
+    res.json({id, username, email, display_name});
 }));
 
-router.get('/user_exists', asyncHandler( async (req, res) => {
+router.post('/user_exists', asyncHandler( async (req, res) => {
     const method = req.body.email ? 'email' :
         req.body.username ? 'username' :
         req.body.phone ? 'phone' : null;
