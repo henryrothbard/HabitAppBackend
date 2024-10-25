@@ -49,7 +49,7 @@ router.post('/create-group', auth, asyncHandler(async (req, res) => {
         VALUES ${pgsql([userId, groupId, created_at])}
     `;
 
-    res.json({id});
+    res.json({groupId});
 }));
 
 const getOccurrencesSince = asyncHandler(async (userId, lastSync) => {
