@@ -27,7 +27,7 @@ router.get('/my-groups', auth, asyncHandler(async (req, res) => {
     res.json({groups});
 }));
 
-router.post('create-group', auth, asyncHandler(async (req, res) => {
+router.post('/create-group', auth, asyncHandler(async (req, res) => {
     const userId = req.session.user.id;
     const { name, description, interval_days, created_at } = req.body.group;
 
