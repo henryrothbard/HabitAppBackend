@@ -31,7 +31,7 @@ router.post('/create-group', auth, asyncHandler(async (req, res) => {
     const userId = req.session.user.id;
     const { name, description, interval_days, created_at } = req.body.group;
 
-    if (!(name && description && interval_days && created_at))
+    if (!(name))
         return res.status(400).send();
 
     const values = [name, description, interval_days, created_at];
