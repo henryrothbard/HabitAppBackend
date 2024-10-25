@@ -15,7 +15,7 @@ router.get('/my-groups', auth, asyncHandler(async (req, res) => {
         SELECT 
         groups.id AS id, 
         groups.name AS name,
-        group.description AS description, 
+        groups.description AS description, 
         groups.interval_days AS interval_days,
         groups.created_at AS created_at
         FROM memberships
