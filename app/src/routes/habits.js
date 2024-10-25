@@ -46,7 +46,7 @@ router.post('/create-group', auth, asyncHandler(async (req, res) => {
 
     await pgsql`
         INSERT INTO memberships (user_id, group_id, joined_at)
-        VALUES ${[userId, , created_at]}
+        VALUES ${pgsql([userId, , created_at])}
     `;
 
     res.json({id});
